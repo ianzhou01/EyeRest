@@ -89,42 +89,69 @@ class TwentyTimeApp:
         self.break_unit.set(unit)
         self.break_unit_button.config(text=unit)
 
-    def start_timer(self):
+    # Note: all return statements in start_timer signify failure to start timer. User will be re-prompted for new input
+    def start_timer(self): 
         if self.running:
             return
         
         try:
-            # Get values and units
+            # Get and validate values
             work_value = int(self.work_value.get())
             work_unit = self.work_unit.get()
-            break_value = int(self.break_value.get())
-            break_unit = self.break_unit.get()
-            
-            # Convert work interval and break duration to seconds
+        except ValueError:
+            messagebox.showerror("Invalid input", "Please enter valid work interval values. (Whole numbers only)")
+            return
+        
+        try: # Convert to seconds and ensure positivity of number
             if work_unit == "minutes":
                 self.work_interval = work_value * 60
             else:
                 self.work_interval = work_value
             
+            if self.work_interval <= 0:
+                raise ValueError("Work interval must be positive.")
+        except ValueError as e:
+            messagebox.showerror("Invalid input", str(e))
+            return
+        
+        try:
+            # Get and validate break values
+            break_value = int(self.break_value.get())
+            break_unit = self.break_unit.get()
+        except ValueError:
+            messagebox.showerror("Invalid input", "Please enter valid break duration values. (Whole numbers only)")
+            return
+
+        try:
+            # Convert seconds and check positivity of break value
             if break_unit == "minutes":
                 self.break_duration = break_value * 60
             else:
                 self.break_duration = break_value
-            # Error checking
-            if self.work_interval <= 0 or self.break_duration <= 0:
-                raise ValueError("Intervals must be positive numbers.")
             
-            self.running = True
-            self.stop_event.clear()
-            self.start_button.config(state=tk.DISABLED)
-            self.stop_button.config(state=tk.NORMAL)
-            
-            if self.timer_thread is None or not self.timer_thread.is_alive():
-                self.timer_thread = threading.Thread(target=self.run_timer, daemon=True)
-                self.timer_thread.start()
-        except ValueError:
-            messagebox.showerror("Invalid input", "Please enter valid numbers for the intervals.")
+            if self.break_duration <= 0:
+                raise ValueError("Break duration must be positive.")
+        except ValueError as e:
+            messagebox.showerror("Invalid input", str(e))
+            return
+        
+        # Minimum value checking
+        if self.work_interval < 5:
+            messagebox.showerror("Invalid input", "Work interval cannot be less than 5 seconds.")
+            return
+        if self.break_duration < 5:
+            messagebox.showerror("Invalid input", "Break duration cannot be less than 5 seconds.")
+            return
 
+        # Continue with starting the timer
+        self.running = True
+        self.stop_event.clear()
+        self.start_button.config(state=tk.DISABLED)
+        self.stop_button.config(state=tk.NORMAL)
+        
+        if self.timer_thread is None or not self.timer_thread.is_alive():
+            self.timer_thread = threading.Thread(target=self.run_timer, daemon=True)
+            self.timer_thread.start()
     def stop_timer(self):
         if not self.running:
             return
@@ -159,12 +186,12 @@ class TwentyTimeApp:
         
         self.top = tk.Toplevel(self.root)
         self.top.attributes("-fullscreen", True)  # fullscreen
-        self.top.attributes("-fullscreen", True)  # fullscreen
-        self.top.configure(bg='black')
-        self.countdown_label = tk.Label(self.top, text="", fg='white', bg='black', font=("Arial", 48))
+        self.top.attributes("-topmost", True)     # Ensure the window stays on top
+        self.top.configure(bg='white')
+        self.countdown_label = tk.Label(self.top, text="", fg='black', bg='white', font=("Verdana", 48))
         self.countdown_label.pack(expand=True)
         
-        # Start the countdown
+        # start countdown
         self.countdown(self.break_duration)
 
     def countdown(self, count):
