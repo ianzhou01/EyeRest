@@ -3,10 +3,10 @@ from tkinter import messagebox
 import threading
 import time
 
-class TwentyTimeApp:
+class EyeRestApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("TwentyTime")
+        self.root.title("EyeRest")
 
         # set window size
         self.window_width = 500
@@ -210,5 +210,5 @@ class TwentyTimeApp:
 
 if __name__ == "__main__":
     root = tk.Tk()
-    app = TwentyTimeApp(root)
+    app = EyeRestApp(root)
     root.mainloop()
