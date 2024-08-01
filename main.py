@@ -61,7 +61,7 @@ class TwentyTimeApp:
         self.break_unit_menu.add_command(label="minutes", command=lambda: self.set_break_unit("minutes"))
         self.break_unit_menu.add_command(label="seconds", command=lambda: self.set_break_unit("seconds"))
 
-        # Start and stop buttons
+        # start/stop features
         self.start_button = tk.Button(root, text="Start", command=self.start_timer)
         self.start_button.pack(pady=10)
 
@@ -94,7 +94,7 @@ class TwentyTimeApp:
             return
         
         try:
-            # Get the values and units
+            # Get stuff
             work_value = int(self.work_value.get())
             work_unit = self.work_unit.get()
             break_value = int(self.break_value.get())
@@ -144,11 +144,11 @@ class TwentyTimeApp:
                 break
             
             try:
-                time.sleep(self.work_interval)  # Work interval in seconds
+                time.sleep(self.work_interval)  # work interval in seconds
                 if not self.running or self.stop_event.is_set():
                     break
                 self.notify_user()
-                time.sleep(self.break_duration)  # Break duration in seconds
+                time.sleep(self.break_duration)  # break duration in seconds
             except Exception as e:
                 print(f"Exception in timer thread: {e}")
                 break
@@ -159,7 +159,7 @@ class TwentyTimeApp:
             return
         
         self.top = tk.Toplevel(self.root)
-        self.top.attributes("-fullscreen", True)  # Make the window fullscreen
+        self.top.attributes("-fullscreen", True)  # fullscreen
         self.top.configure(bg='black')
         self.countdown_label = tk.Label(self.top, text="", fg='white', bg='black', font=("Arial", 48))
         self.countdown_label.pack(expand=True)
@@ -172,14 +172,14 @@ class TwentyTimeApp:
             self.countdown_label.config(text=f"Look 20 feet away for {count} seconds!")
             self.top.after(1000, self.countdown, count - 1)  # Update countdown every second
         else:
-            self.top.destroy()  # Close the notification window when the countdown is done
+            self.top.destroy()  # Close notif window when countdown ends
 
     def on_closing(self):
-        self.stop_timer()  # Stop the timer if running
+        self.stop_timer()  # Stop timer if running
         if self.timer_thread is not None:
-            self.stop_event.set()  # Signal the thread to stop
-            self.timer_thread.join()  # Wait for the timer thread to finish
-        self.root.destroy()  # Close the main window and exit the application
+            self.stop_event.set()  # Signal thread to stop
+            self.timer_thread.join()  # Wait for timer thread to finish
+        self.root.destroy()  # Close main window and exit application
 
 if __name__ == "__main__":
     root = tk.Tk()
