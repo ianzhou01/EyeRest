@@ -161,23 +161,48 @@ class EyeRestApp:
         self.start_button.config(state=tk.NORMAL)
         self.stop_button.config(state=tk.DISABLED)
         
+        # Kill notification window if it exists
         if hasattr(self, 'top') and self.top.winfo_exists():
             self.top.destroy()
+
+        # Hard reset the thread
+        if self.timer_thread is not None:
+            while self.timer_thread.is_alive():
+                self.timer_thread.join(timeout=0.1)
+            self.timer_thread = None
+            
 
     def run_timer(self):
         while self.running:
             if self.stop_event.is_set():
                 break
             
-            try:
-                time.sleep(self.work_interval)  # work interval in seconds
-                if not self.running or self.stop_event.is_set():
+            # Work Interval
+            work_time_remaining = self.work_interval
+            start_time = time.time()
+            while self.running and work_time_remaining > 0:
+                time.sleep(min(1, work_time_remaining))  # Sleep for 1 second or the remaining time
+                elapsed = time.time() - start_time
+                work_time_remaining -= elapsed
+                start_time = time.time()
+                if self.stop_event.is_set():
                     break
-                self.notify_user()
-                time.sleep(self.break_duration)  # break duration in seconds
-            except Exception as e:
-                print(f"Exception in timer thread: {e}")
+
+            if not self.running or self.stop_event.is_set():
                 break
+            
+            self.notify_user()
+
+            # Break Interval
+            break_time_remaining = self.break_duration
+            start_time = time.time()
+            while self.running and break_time_remaining > 0:
+                time.sleep(min(1, break_time_remaining))  # Sleep for 1 second or the remaining time
+                elapsed = time.time() - start_time
+                break_time_remaining -= elapsed
+                start_time = time.time()
+                if self.stop_event.is_set():
+                    break
 
     def notify_user(self):
         # Ensure only one notification window is open
