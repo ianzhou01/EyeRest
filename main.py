@@ -61,7 +61,7 @@ class TwentyTimeApp:
         self.break_unit_menu.add_command(label="minutes", command=lambda: self.set_break_unit("minutes"))
         self.break_unit_menu.add_command(label="seconds", command=lambda: self.set_break_unit("seconds"))
 
-        # start/stop buttons
+        # start/stop features
         self.start_button = tk.Button(root, text="Start", command=self.start_timer)
         self.start_button.pack(pady=10)
 
@@ -143,11 +143,11 @@ class TwentyTimeApp:
                 break
             
             try:
-                time.sleep(self.work_interval)  # work interval (sec)
+                time.sleep(self.work_interval)  # work interval in seconds
                 if not self.running or self.stop_event.is_set():
                     break
                 self.notify_user()
-                time.sleep(self.break_duration)  # break duration (sec)
+                time.sleep(self.break_duration)  # break duration in seconds
             except Exception as e:
                 print(f"Exception in timer thread: {e}")
                 break
@@ -158,6 +158,7 @@ class TwentyTimeApp:
             return
         
         self.top = tk.Toplevel(self.root)
+        self.top.attributes("-fullscreen", True)  # fullscreen
         self.top.attributes("-fullscreen", True)  # fullscreen
         self.top.configure(bg='black')
         self.countdown_label = tk.Label(self.top, text="", fg='white', bg='black', font=("Arial", 48))
