@@ -185,7 +185,7 @@ class EyeRestApp:
                 elapsed = time.time() - start_time
                 work_time_remaining -= elapsed
                 start_time = time.time()
-                if self.stop_event.is_set():
+                if self.stop_event.is_set(): # Constant check for stop
                     break
 
             if not self.running or self.stop_event.is_set():
@@ -201,7 +201,7 @@ class EyeRestApp:
                 elapsed = time.time() - start_time
                 break_time_remaining -= elapsed
                 start_time = time.time()
-                if self.stop_event.is_set():
+                if self.stop_event.is_set(): # Constant check for stop
                     break
 
     def notify_user(self):
