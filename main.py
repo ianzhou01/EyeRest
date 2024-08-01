@@ -8,22 +8,22 @@ class TwentyTimeApp:
         self.root = root
         self.root.title("TwentyTime")
 
-        # Set window size
+        # set window size
         self.window_width = 500
         self.window_height = 300
 
-        # Center the window on the screen
+        # center window
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
         x = (screen_width - self.window_width) // 2
         y = (screen_height - self.window_height) // 2
         self.root.geometry(f"{self.window_width}x{self.window_height}+{x}+{y}")
 
-        # Frame for work interval
+        # make frame for work interval
         self.work_frame = tk.Frame(root)
         self.work_frame.pack(pady=10)
         
-        # Label and entry for work interval
+        # make label and entry for work interval
         self.work_label = tk.Label(self.work_frame, text="Work Interval:")
         self.work_label.pack(side=tk.LEFT)
         
@@ -31,7 +31,7 @@ class TwentyTimeApp:
         self.work_entry = tk.Entry(self.work_frame, textvariable=self.work_value)
         self.work_entry.pack(side=tk.LEFT)
         
-        # Custom dropdown for work unit
+        # create dropdown for work units
         self.work_unit = tk.StringVar(value="minutes")  # Default unit
         self.work_unit_button = tk.Button(self.work_frame, text=self.work_unit.get(), command=self.toggle_work_unit_menu)
         self.work_unit_button.pack(side=tk.LEFT)
@@ -40,11 +40,11 @@ class TwentyTimeApp:
         self.work_unit_menu.add_command(label="minutes", command=lambda: self.set_work_unit("minutes"))
         self.work_unit_menu.add_command(label="seconds", command=lambda: self.set_work_unit("seconds"))
 
-        # Frame for break interval
+        # make frame for break interval
         self.break_frame = tk.Frame(root)
         self.break_frame.pack(pady=10)
 
-        # Label and entry for break interval
+        # make label and entry for break interval
         self.break_label = tk.Label(self.break_frame, text="Break Duration:")
         self.break_label.pack(side=tk.LEFT)
         
@@ -52,7 +52,7 @@ class TwentyTimeApp:
         self.break_entry = tk.Entry(self.break_frame, textvariable=self.break_value)
         self.break_entry.pack(side=tk.LEFT)
         
-        # Custom dropdown for break unit
+        # dropdown for break units
         self.break_unit = tk.StringVar(value="seconds")  # Default unit
         self.break_unit_button = tk.Button(self.break_frame, text=self.break_unit.get(), command=self.toggle_break_unit_menu)
         self.break_unit_button.pack(side=tk.LEFT)
@@ -61,7 +61,7 @@ class TwentyTimeApp:
         self.break_unit_menu.add_command(label="minutes", command=lambda: self.set_break_unit("minutes"))
         self.break_unit_menu.add_command(label="seconds", command=lambda: self.set_break_unit("seconds"))
 
-        # Start and stop buttons
+        # start/stop buttons
         self.start_button = tk.Button(root, text="Start", command=self.start_timer)
         self.start_button.pack(pady=10)
 
@@ -72,7 +72,7 @@ class TwentyTimeApp:
         self.timer_thread = None
         self.stop_event = threading.Event()
 
-        # Bind the close event to the cleanup function
+        # Bind close event to cleanup func
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
     def toggle_work_unit_menu(self):
@@ -94,24 +94,23 @@ class TwentyTimeApp:
             return
         
         try:
-            # Get the values and units
+            # Get values and units
             work_value = int(self.work_value.get())
             work_unit = self.work_unit.get()
             break_value = int(self.break_value.get())
             break_unit = self.break_unit.get()
             
-            # Convert work interval to seconds
+            # Convert work interval and break duration to seconds
             if work_unit == "minutes":
                 self.work_interval = work_value * 60
             else:
                 self.work_interval = work_value
             
-            # Convert break duration to seconds
             if break_unit == "minutes":
                 self.break_duration = break_value * 60
             else:
                 self.break_duration = break_value
-            
+            # Error checking
             if self.work_interval <= 0 or self.break_duration <= 0:
                 raise ValueError("Intervals must be positive numbers.")
             
@@ -121,7 +120,7 @@ class TwentyTimeApp:
             self.stop_button.config(state=tk.NORMAL)
             
             if self.timer_thread is None or not self.timer_thread.is_alive():
-                self.timer_thread = threading.Thread(target=self.run_timer)
+                self.timer_thread = threading.Thread(target=self.run_timer, daemon=True)
                 self.timer_thread.start()
         except ValueError:
             messagebox.showerror("Invalid input", "Please enter valid numbers for the intervals.")
@@ -144,11 +143,11 @@ class TwentyTimeApp:
                 break
             
             try:
-                time.sleep(self.work_interval)  # Work interval in seconds
+                time.sleep(self.work_interval)  # work interval (sec)
                 if not self.running or self.stop_event.is_set():
                     break
                 self.notify_user()
-                time.sleep(self.break_duration)  # Break duration in seconds
+                time.sleep(self.break_duration)  # break duration (sec)
             except Exception as e:
                 print(f"Exception in timer thread: {e}")
                 break
@@ -159,7 +158,7 @@ class TwentyTimeApp:
             return
         
         self.top = tk.Toplevel(self.root)
-        self.top.attributes("-fullscreen", True)  # Make the window fullscreen
+        self.top.attributes("-fullscreen", True)  # fullscreen
         self.top.configure(bg='black')
         self.countdown_label = tk.Label(self.top, text="", fg='white', bg='black', font=("Arial", 48))
         self.countdown_label.pack(expand=True)
@@ -170,16 +169,16 @@ class TwentyTimeApp:
     def countdown(self, count):
         if count >= 0 and self.running:
             self.countdown_label.config(text=f"Look 20 feet away for {count} seconds!")
-            self.top.after(1000, self.countdown, count - 1)  # Update countdown every second
+            self.top.after(1000, self.countdown, count - 1)  # update countdown every 1000 ms
         else:
-            self.top.destroy()  # Close the notification window when the countdown is done
+            self.top.destroy()  # close notif window when countdown finishes
 
     def on_closing(self):
-        self.stop_timer()  # Stop the timer if running
+        self.stop_timer()  # stop timer if running
         if self.timer_thread is not None:
-            self.stop_event.set()  # Signal the thread to stop
-            self.timer_thread.join()  # Wait for the timer thread to finish
-        self.root.destroy()  # Close the main window and exit the application
+            self.stop_event.set()  # signal thread to stop
+            self.timer_thread.join(timeout=1)  # add timeout to wait for timer to finish
+        self.root.destroy()  # close the main window and exit
 
 if __name__ == "__main__":
     root = tk.Tk()
