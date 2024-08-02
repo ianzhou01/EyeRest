@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import messagebox
 import threading
 import time
-import keyboard
+from PIL import Image, ImageTk
 
 class EyeRestApp:
     def __init__(self, root):
@@ -80,10 +80,6 @@ class EyeRestApp:
 
         # Bind close event to cleanup func
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
-
-        # Bind escape key globally
-        keyboard.add_hotkey('esc', self.global_escape_key)
-
 
     def toggle_work_unit_menu(self):
         self.work_unit_menu.post(self.work_unit_button.winfo_rootx(), self.work_unit_button.winfo_rooty() + self.work_unit_button.winfo_height())
@@ -195,11 +191,9 @@ class EyeRestApp:
     def on_closing(self):
         self.stop_timer()  # stop timer if running
 
-        keyboard.unhook_all_hotkeys()
-
         self.root.after(0, self.root.destroy)  # close the main window and exit
 
-    def global_escape_key(self):
+    def escape_notification_window(self):
         if hasattr(self, 'top') and self.top.winfo_exists():
             self.top.destroy()
             self.notif_stopped_event.set()
@@ -276,15 +270,16 @@ class EyeRestApp:
         self.countdown_label = tk.Label(self.top, text="", fg='black', bg='white', font=("Verdana", 48)) 
         self.countdown_label.grid(row=0, column=0, pady=20)
 
-
-        self.info_label = tk.Label(self.top, text="Press [Esc] to exit and reset.", fg='black', bg='white', font=("Verdana", 24))
-        self.info_label.grid(row=1, column=0, pady=20)
+        original_image = Image.open("escape.png")  # Load the image
+        resized_image = original_image.resize((100, 100), Image.LANCZOS)  # Resize to 100x100 pixels
+        self.icon_image = ImageTk.PhotoImage(resized_image)  # Convert to PhotoImage
+        self.icon_button = tk.Button(frame, image=self.icon_image, borderwidth=0, command=self.escape_notification_window)
+        self.icon_button.grid(row=1, column=0, pady=20, padx=20)  # Centered at the bottom of the frame
 
         frame.update_idletasks()
         width = frame.winfo_reqwidth()
         height = frame.winfo_reqheight()
         self.top.geometry(f"{width}x{height}+{self.top.winfo_screenwidth()//2-width//2}+{self.top.winfo_screenheight()//2-height//2}")
-
 
         # start countdown
         self.break_interval_countdown(self.break_duration)
