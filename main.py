@@ -75,9 +75,14 @@ class EyeRestApp:
         self.running = False
         self.timer_thread = None
         self.stop_event = threading.Event()
+        self.notif_stopped_event = threading.Event()
 
         # Bind close event to cleanup func
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+
+        # Bind escape key globally
+        self.root.bind_all("<Escape>", self.global_escape_key)
+
 
     def toggle_work_unit_menu(self):
         self.work_unit_menu.post(self.work_unit_button.winfo_rootx(), self.work_unit_button.winfo_rooty() + self.work_unit_button.winfo_height())
@@ -97,8 +102,6 @@ class EyeRestApp:
     def start_timer(self): 
         if self.running:
             return
-        print("Timer started!\n")
-
         
         try:
             # Get and validate values
@@ -152,6 +155,8 @@ class EyeRestApp:
         # Continue with starting the timer
         self.running = True
         self.stop_event.clear()
+        self.notif_stopped_event.clear()
+
         self.start_button.config(state=tk.DISABLED)
         self.stop_button.config(state=tk.NORMAL)
         
@@ -162,41 +167,39 @@ class EyeRestApp:
     def stop_timer(self):
         if not self.running:
             return
-        print("Timer stopping:\n")
         
         self.running = False
         self.stop_event.set()
+        self.notif_stopped_event.set()
         self.start_button.config(state=tk.NORMAL)
         self.stop_button.config(state=tk.DISABLED)
-        print("States updated...\n")
         
         # Kill notification window if it exists
         if hasattr(self, 'top') and self.top.winfo_exists():
             self.top.destroy()
-        print("Destroyed notif window...\n")
 
         # Hard reset the thread
         if self.timer_thread is not None:
-            print("Clearing the thread...\n")
             join_start_time = time.time()
             while self.timer_thread.is_alive():
-                self.timer_thread.join(timeout=0.1)
+                self.timer_thread.join(timeout=0.1) # Bleed timer
                 # Break the loop after a certain timeout to avoid infinite loop
-                if time.time() - join_start_time > 0.5:  # Timeout of 0.5 sec
+                if time.time() - join_start_time > 0.15:  # Short timeout for safety buffer to clear thread
                     break
             self.timer_thread = None
         
         # Reset countdown
-        print("Countdown resetted!\n")
         self.root.after(0, self.reset_countdown)
 
     def on_closing(self):
         self.stop_timer()  # stop timer if running
-        print("Timer ended to close...\n")
 
         self.root.after(0, self.root.destroy)  # close the main window and exit
-        print("Successfully closed\n")
 
+    def global_escape_key(self, event):
+        if hasattr(self, 'top') and self.top.winfo_exists():
+            self.top.destroy()
+            self.notif_stopped_event.set()
 
     def reset_countdown(self):
         self.root.after(0, self.main_countdown.config, {'text': "00:00:00"})
@@ -218,7 +221,7 @@ class EyeRestApp:
                 if not self.running or self.stop_event.is_set(): # Constant check for stop
                     break
                 if self.root.winfo_exists():  # Check if the root window exists before updating
-                    self.root.after(0, self.update_countdown, work_time_remaining)
+                    self.root.after(0, self.update_main_countdown, work_time_remaining)
 
             if not self.running or self.stop_event.is_set():
                 break
@@ -233,16 +236,16 @@ class EyeRestApp:
                 elapsed = time.time() - start_time
                 break_time_remaining -= elapsed
                 start_time = time.time()
-                # Also display break time (although they won't)
-                if not self.running or self.stop_event.is_set(): # Constant check for stop
+                if not self.running or self.stop_event.is_set() or self.notif_stopped_event.is_set(): # COULD CAUSE ISSUES WITH RESTARTING MAIN TIMER
+                    '''----CRITICAL LINE FOR MAIN TIMER RESET UPON NOTIFICATION WINDOW ESCAPE----'''
+                    self.notif_stopped_event.clear()
                     break
                 if self.root.winfo_exists():
-                    self.root.after(0, self.update_countdown, break_time_remaining)
+                    self.root.after(0, self.update_main_countdown, break_time_remaining)
 
-    def update_countdown(self, time_remaining):
+    def update_main_countdown(self, time_remaining):
         if not self.running or self.stop_event.is_set():
             return
-        
         hours = int(time_remaining // 3600)
         minutes = int((time_remaining % 3600) // 60)
         seconds = int(time_remaining % 60)
@@ -254,21 +257,21 @@ class EyeRestApp:
         # Ensure only one notification window is open
         if hasattr(self, 'top') and self.top.winfo_exists():
             return
-        
+            
         self.top = tk.Toplevel(self.root)
         self.top.attributes("-fullscreen", True)  # fullscreen
         self.top.attributes("-topmost", True)     # Ensure the window stays on top
         self.top.configure(bg='white')
         self.countdown_label = tk.Label(self.top, text="", fg='black', bg='white', font=("Verdana", 48))
         self.countdown_label.pack(expand=True)
-        
-        # start countdown
-        self.countdown(self.break_duration)
 
-    def countdown(self, count):
+        # start countdown
+        self.break_interval_countdown(self.break_duration)
+
+    def break_interval_countdown(self, count):
         if count >= 0 and self.running:
             self.countdown_label.config(text=f"Look 20 feet away for {count} seconds!")
-            self.top.after(1000, self.countdown, count - 1)  # update countdown every 1000 ms
+            self.top.after(1000, self.break_interval_countdown, count - 1)  # update countdown every 1000 ms
         else:
             self.top.destroy()  # close notif window when countdown finishes
 
@@ -277,3 +280,5 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = EyeRestApp(root)
     root.mainloop()
+    
+
