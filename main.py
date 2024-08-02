@@ -2,12 +2,28 @@ import tkinter as tk
 from tkinter import messagebox
 import threading
 import time
+import os
+import sys
 from PIL import Image, ImageTk
+
+def resource_path(relative_path):
+    """ Get absolute path to resource"""
+    try:
+        # PyInstaller creates a temp folder and stores the path in `sys._MEIPASS`
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
 
 class EyeRestApp:
     def __init__(self, root):
         self.root = root
         self.root.title("EyeRest")
+
+        original_image = Image.open(resource_path("escape.png"))  # Load the image
+        resized_image = original_image.resize((100, 100), Image.LANCZOS)  # Resize to 100x100 pixels
+        self.icon_image = ImageTk.PhotoImage(resized_image)  # Convert to PhotoImage
 
         # set window size
         self.window_width = 500
@@ -270,9 +286,6 @@ class EyeRestApp:
         self.countdown_label = tk.Label(self.top, text="", fg='black', bg='white', font=("Verdana", 48)) 
         self.countdown_label.grid(row=0, column=0, pady=20)
 
-        original_image = Image.open("escape.png")  # Load the image
-        resized_image = original_image.resize((100, 100), Image.LANCZOS)  # Resize to 100x100 pixels
-        self.icon_image = ImageTk.PhotoImage(resized_image)  # Convert to PhotoImage
         self.icon_button = tk.Button(frame, image=self.icon_image, borderwidth=0, command=self.escape_notification_window)
         self.icon_button.grid(row=1, column=0, pady=20, padx=20)  # Centered at the bottom of the frame
 
