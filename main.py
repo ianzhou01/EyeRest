@@ -97,6 +97,8 @@ class EyeRestApp:
     def start_timer(self): 
         if self.running:
             return
+        print("Timer started!\n")
+
         
         try:
             # Get and validate values
@@ -160,32 +162,48 @@ class EyeRestApp:
     def stop_timer(self):
         if not self.running:
             return
+        print("Timer stopping:\n")
         
         self.running = False
         self.stop_event.set()
         self.start_button.config(state=tk.NORMAL)
         self.stop_button.config(state=tk.DISABLED)
+        print("States updated...\n")
         
         # Kill notification window if it exists
         if hasattr(self, 'top') and self.top.winfo_exists():
             self.top.destroy()
+        print("Destroyed notif window...\n")
 
         # Hard reset the thread
         if self.timer_thread is not None:
+            print("Clearing the thread...\n")
+            join_start_time = time.time()
             while self.timer_thread.is_alive():
                 self.timer_thread.join(timeout=0.1)
+                # Break the loop after a certain timeout to avoid infinite loop
+                if time.time() - join_start_time > 0.5:  # Timeout of 0.5 sec
+                    break
             self.timer_thread = None
         
         # Reset countdown
+        print("Countdown resetted!\n")
         self.root.after(0, self.reset_countdown)
+
+    def on_closing(self):
+        self.stop_timer()  # stop timer if running
+        print("Timer ended to close...\n")
+
+        self.root.after(0, self.root.destroy)  # close the main window and exit
+        print("Successfully closed\n")
+
 
     def reset_countdown(self):
         self.root.after(0, self.main_countdown.config, {'text': "00:00:00"})
             
-
     def run_timer(self):
         while self.running:
-            if self.stop_event.is_set():
+            if not self.running or self.stop_event.is_set():
                 break
             
             # Work Interval
@@ -199,8 +217,8 @@ class EyeRestApp:
                 # Main countdown
                 if not self.running or self.stop_event.is_set(): # Constant check for stop
                     break
-                self.root.after(0, self.update_countdown, work_time_remaining) # Tricky thread-safety
-                
+                if self.root.winfo_exists():  # Check if the root window exists before updating
+                    self.root.after(0, self.update_countdown, work_time_remaining)
 
             if not self.running or self.stop_event.is_set():
                 break
@@ -211,15 +229,18 @@ class EyeRestApp:
             break_time_remaining = self.break_duration
             start_time = time.time()
             while self.running and break_time_remaining > 0:
-                if not self.running or self.stop_event.is_set(): # Constant check for stop
-                    break
                 time.sleep(min(0.05, break_time_remaining))  # Update every 0.05 seconds
                 elapsed = time.time() - start_time
                 break_time_remaining -= elapsed
                 start_time = time.time()
+                # Also display break time (although they won't)
+                if not self.running or self.stop_event.is_set(): # Constant check for stop
+                    break
+                if self.root.winfo_exists():
+                    self.root.after(0, self.update_countdown, break_time_remaining)
 
     def update_countdown(self, time_remaining):
-        if not self.running:
+        if not self.running or self.stop_event.is_set():
             return
         
         hours = int(time_remaining // 3600)
@@ -251,12 +272,6 @@ class EyeRestApp:
         else:
             self.top.destroy()  # close notif window when countdown finishes
 
-    def on_closing(self):
-        self.stop_timer()  # stop timer if running
-        if self.timer_thread is not None:
-            self.stop_event.set()  # signal thread to stop
-            self.timer_thread.join(timeout=1)  # add timeout to wait for timer to finish
-        self.root.destroy()  # close the main window and exit
 
 if __name__ == "__main__":
     root = tk.Tk()
