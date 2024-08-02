@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import messagebox
 import threading
 import time
+import keyboard
 
 class EyeRestApp:
     def __init__(self, root):
@@ -81,7 +82,7 @@ class EyeRestApp:
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
         # Bind escape key globally
-        self.root.bind_all("<Escape>", self.global_escape_key)
+        keyboard.add_hotkey('esc', self.global_escape_key)
 
 
     def toggle_work_unit_menu(self):
@@ -194,9 +195,11 @@ class EyeRestApp:
     def on_closing(self):
         self.stop_timer()  # stop timer if running
 
+        keyboard.unhook_all_hotkeys()
+
         self.root.after(0, self.root.destroy)  # close the main window and exit
 
-    def global_escape_key(self, event):
+    def global_escape_key(self):
         if hasattr(self, 'top') and self.top.winfo_exists():
             self.top.destroy()
             self.notif_stopped_event.set()
