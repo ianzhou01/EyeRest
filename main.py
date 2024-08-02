@@ -265,8 +265,26 @@ class EyeRestApp:
         self.top.attributes("-fullscreen", True)  # fullscreen
         self.top.attributes("-topmost", True)     # Ensure the window stays on top
         self.top.configure(bg='white')
-        self.countdown_label = tk.Label(self.top, text="", fg='black', bg='white', font=("Verdana", 48))
-        self.countdown_label.pack(expand=True)
+
+        frame = tk.Frame(self.top, bg='white')
+        frame.grid(row=0, column=0, sticky='nsew') # Center frame and expand to fill
+
+        self.top.grid_rowconfigure(0, weight=1)
+        self.top.grid_columnconfigure(0, weight=1)
+
+        # Text holder for break_interval_countdown function updates
+        self.countdown_label = tk.Label(self.top, text="", fg='black', bg='white', font=("Verdana", 48)) 
+        self.countdown_label.grid(row=0, column=0, pady=20)
+
+
+        self.info_label = tk.Label(self.top, text="Press [Esc] to exit and reset.", fg='black', bg='white', font=("Verdana", 24))
+        self.info_label.grid(row=1, column=0, pady=20)
+
+        frame.update_idletasks()
+        width = frame.winfo_reqwidth()
+        height = frame.winfo_reqheight()
+        self.top.geometry(f"{width}x{height}+{self.top.winfo_screenwidth()//2-width//2}+{self.top.winfo_screenheight()//2-height//2}")
+
 
         # start countdown
         self.break_interval_countdown(self.break_duration)
