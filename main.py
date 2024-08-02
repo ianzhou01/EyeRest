@@ -61,12 +61,16 @@ class EyeRestApp:
         self.break_unit_menu.add_command(label="minutes", command=lambda: self.set_break_unit("minutes"))
         self.break_unit_menu.add_command(label="seconds", command=lambda: self.set_break_unit("seconds"))
 
+        # Countdown
+        self.main_countdown = tk.Label(root, text="00:00:00", font=("Arial", 24))
+        self.main_countdown.pack(pady=10)
+
         # start/stop features
         self.start_button = tk.Button(root, text="Start", command=self.start_timer)
         self.start_button.pack(pady=10)
 
         self.stop_button = tk.Button(root, text="Stop", command=self.stop_timer, state=tk.DISABLED)
-        self.stop_button.pack(pady=10)
+        self.stop_button.pack(pady=10)        
 
         self.running = False
         self.timer_thread = None
@@ -152,6 +156,7 @@ class EyeRestApp:
         if self.timer_thread is None or not self.timer_thread.is_alive():
             self.timer_thread = threading.Thread(target=self.run_timer, daemon=True)
             self.timer_thread.start()
+
     def stop_timer(self):
         if not self.running:
             return
@@ -170,6 +175,12 @@ class EyeRestApp:
             while self.timer_thread.is_alive():
                 self.timer_thread.join(timeout=0.1)
             self.timer_thread = None
+        
+        # Reset countdown
+        self.root.after(0, self.reset_countdown)
+
+    def reset_countdown(self):
+        self.root.after(0, self.main_countdown.config, {'text': "00:00:00"})
             
 
     def run_timer(self):
@@ -181,12 +192,15 @@ class EyeRestApp:
             work_time_remaining = self.work_interval
             start_time = time.time()
             while self.running and work_time_remaining > 0:
-                time.sleep(min(1, work_time_remaining))  # Sleep for 1 second or the remaining time
+                time.sleep(min(0.05, work_time_remaining))  # Update every 0.05 seconds
                 elapsed = time.time() - start_time
                 work_time_remaining -= elapsed
                 start_time = time.time()
-                if self.stop_event.is_set():
+                # Main countdown
+                if not self.running or self.stop_event.is_set(): # Constant check for stop
                     break
+                self.root.after(0, self.update_countdown, work_time_remaining) # Tricky thread-safety
+                
 
             if not self.running or self.stop_event.is_set():
                 break
@@ -197,12 +211,23 @@ class EyeRestApp:
             break_time_remaining = self.break_duration
             start_time = time.time()
             while self.running and break_time_remaining > 0:
-                time.sleep(min(1, break_time_remaining))  # Sleep for 1 second or the remaining time
+                if not self.running or self.stop_event.is_set(): # Constant check for stop
+                    break
+                time.sleep(min(0.05, break_time_remaining))  # Update every 0.05 seconds
                 elapsed = time.time() - start_time
                 break_time_remaining -= elapsed
                 start_time = time.time()
-                if self.stop_event.is_set():
-                    break
+
+    def update_countdown(self, time_remaining):
+        if not self.running:
+            return
+        
+        hours = int(time_remaining // 3600)
+        minutes = int((time_remaining % 3600) // 60)
+        seconds = int(time_remaining % 60)
+        countdown_text = f"{hours:02}:{minutes:02}:{seconds:02}"
+
+        self.root.after(0, self.main_countdown.config, {'text': countdown_text})
 
     def notify_user(self):
         # Ensure only one notification window is open
