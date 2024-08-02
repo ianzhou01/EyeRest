@@ -5,6 +5,8 @@
 - The stop button resets the timer; the timer will begin from 0 until the new (if updated) work interval has elapsed.
 ### Implementation
 - This script can be run locally or made into an executable via pyinstaller (a sample executable for Windows is attached).
+### Installation
+- Generally, manual installation is not recommended. Some windows machines may require .ico or .exe files instead of .png files, and main.py will need to be refactored to reflect the file conversion. Pillow can be installed for automatic conversion from .png to .ico/.exe.
 - First, ensure you have Python installed (this was written with Python 3.12.3; it may run on earlier versions, but that is not guaranteed).
 - Second, install PyInstaller if you haven't already (simply run "pip install pyinstaller" if not).
 - Third, download main.py, EyeRest.spec, clock.png, and escape.png, all into one directory/folder of your choice. Creating a new folder is recommended. (If desired, the future file icon "clock.png" can be changed to an icon of your choosing; simply download the new icon in the same folder and edit "EyeRest.spec" in a text editor and alter the data dependency for "clock.png" to the name of the new icon.)
