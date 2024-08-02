@@ -1,11 +1,10 @@
 # EyeRest
 ### Functionality
 - This is a simple app built on Tkinter (included in Python) to facilitate regular eye rest while working on the computer.
-- The current version of the app freezes the screen during breaks with overlay.
+- The current version of the app covers the screen during breaks with overlay; an escape button can exit this notification countdown and start a new cycle.
 - The stop button resets the timer; the timer will begin from 0 until the new (if updated) work interval has elapsed.
-### Implementation
-- This script can be run locally or made into an executable via pyinstaller (a sample executable for Windows is attached).
 ### Installation
+- This app is currently configured only for Windows. Simply download EyeRest.exe and run the program (you may need to override computer warnings).
 - Generally, manual installation is not recommended. Some windows machines may require .ico or .exe files instead of .png files, and main.py will need to be refactored to reflect the file conversion. Pillow can be installed for automatic conversion from .png to .ico/.exe.
 - First, ensure you have Python installed (this was written with Python 3.12.3; it may run on earlier versions, but that is not guaranteed).
 - Second, install PyInstaller if you haven't already (simply run "pip install pyinstaller" if not).
