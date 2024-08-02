@@ -1,6 +1,6 @@
 # EyeRest
 ### Functionality
-- This is a simple app built on Tkinter (included in Python) to facilitate regular eye rest while working on the computer.
+- This is a simple app built on Tkinter (included in Python) to facilitate regular eye rest while working on computers.
 - The current version of the app covers the screen during breaks with overlay; an escape button can exit this notification countdown and start a new cycle.
 - The stop button resets the timer; the timer will begin from 0 until the new (if updated) work interval has elapsed.
 ### Installation
