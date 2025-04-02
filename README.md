@@ -7,7 +7,7 @@
 This app is currently configured only for Windows. Simply download EyeRest.exe and run the program (you may need to override computer warnings).
 ### Build EyeRest
 - First, ensure you have Python installed (this was written with Python 3.12.3; it may run on earlier versions, but that is not guaranteed). Make sure it's added to your PATH during installation (in Windows, you can check this by opening a terminal and entering ```python --version```).
-- Open VSCode (or an IDE of your choice), and clone this repository (```git clone https://github.com/ianzhou01/EyeRest"``` on the terminal). 
+- Open VSCode (or an IDE of your choice), and clone this repository (```git clone https://github.com/ianzhou01/EyeRest``` on the terminal). 
 - Go into the cloned folder; run ```python -m venv .venv```, ```venv/Scripts/activate```, and then ```pip install -r requirements.txt``` to install dependencies in the environment.
 - Run ```pyinstaller EyeRest.spec``` and wait for the process to finish.
 - The executable should now be created in the dist directory.
