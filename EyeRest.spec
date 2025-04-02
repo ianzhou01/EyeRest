@@ -4,10 +4,10 @@ from PyInstaller.utils.hooks import copy_metadata
 
 
 a = Analysis(
-    ['main.py'],
+    ['src/main.py'],
     pathex=['.'],
     binaries=[],
-    datas=[('escape.png', '.'), ('clock.png', '.')],
+    datas=[('resources/escape.png', '.'), ('resources/clock.png', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -32,7 +32,7 @@ exe = EXE(
     upx_exclude=[],
     runtime_tmpdir=None,
     console=False,
-    icon='clock.png',
+    icon='resources/clock.png',
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
