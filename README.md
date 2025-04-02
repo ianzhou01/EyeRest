@@ -1,4 +1,5 @@
 # EyeRest
+![EyeRest Logo](preview.png)
 ### Functionality
 - This is a simple app built on Tkinter (included in Python) to facilitate regular eye rest while working on computers.
 - The current version of the app covers the screen during breaks with overlay; the escape icon exits this notification countdown and starts a new cycle.
