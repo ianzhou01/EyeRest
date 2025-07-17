@@ -75,6 +75,9 @@ class EyeRestApp:
         self.break_value = tk.StringVar(value="20")  # Default value
         self.break_entry = tk.Entry(self.break_frame, textvariable=self.break_value, validate="key", validatecommand=vcmd_break)
         self.break_entry.pack(side=tk.LEFT)
+
+        self.work_value.trace_add("write", lambda *args: self.validate_inputs())
+        self.break_value.trace_add("write", lambda *args: self.validate_inputs())
         
         # dropdown for break units
         self.break_unit = tk.StringVar(value="seconds")  # Default unit
@@ -94,7 +97,10 @@ class EyeRestApp:
         self.start_button.pack(pady=10)
 
         self.stop_button = tk.Button(root, text="Stop", command=self.stop_timer, state=tk.DISABLED)
-        self.stop_button.pack(pady=10)        
+        self.stop_button.pack(pady=10)
+
+        self.error_label = tk.Label(root, text="", fg="red", font=("Arial", 10))
+        self.error_label.pack(pady=(5, 10))  # Add some padding for spacing        
 
         self.running = False
         self.timer_thread = None
@@ -110,6 +116,7 @@ class EyeRestApp:
     def set_work_unit(self, unit):
         self.work_unit.set(unit)
         self.work_unit_button.config(text=unit)
+        self.validate_inputs()
 
     def toggle_break_unit_menu(self):
         self.break_unit_menu.post(self.break_unit_button.winfo_rootx(), self.break_unit_button.winfo_rooty() + self.break_unit_button.winfo_height())
@@ -117,6 +124,7 @@ class EyeRestApp:
     def set_break_unit(self, unit):
         self.break_unit.set(unit)
         self.break_unit_button.config(text=unit)
+        self.validate_inputs()
 
     def update_main_countdown_preview(self):
         if self.running:
@@ -146,13 +154,55 @@ class EyeRestApp:
     def validate_numeric_input(self, new_value, max_length):
         if new_value == "":
             return True  # Allow backspace
+        
         if new_value.isdigit() and len(new_value) <= int(max_length):
+            if new_value == "0" or new_value.startswith("0"):
+                return False  # Disallow leading zeros like '01', '0001'
             return True
+        
         return False
+    
+    def validate_inputs(self):
+        error_messages = []
+        
+        # Validate work interval
+        try:
+            work_value = int(self.work_value.get())
+            if work_value <= 0:
+                error_messages.append("Work interval must be positive.")
+            elif work_value < 5 and self.work_unit.get() == "seconds":
+                error_messages.append("Work interval cannot be less than 5 seconds.")
+            elif work_value > 999999:
+                error_messages.append("Work interval too large.")
+        except ValueError:
+            error_messages.append("Work interval must be a whole number.")
+            
+        # Validate break duration
+        try:
+            break_value = int(self.break_value.get())
+            if break_value <= 0:
+                error_messages.append("Break duration must be positive.")
+            elif break_value < 5 and self.break_unit.get() == "seconds":
+                error_messages.append("Break duration cannot be less than 5 seconds.")
+            elif break_value > 166 and self.break_unit.get() == "minutes":
+                error_messages.append("Break duration too large. Maximum break length is 166 minutes (9999 s).")
+        except ValueError:
+            error_messages.append("Break duration must be a whole number.")
+            
+        # Update error label
+        if error_messages:
+            self.error_label.config(text="; ".join(error_messages))
+            return False
+        else:
+            self.error_label.config(text="")
+            return True
+
 
     # Note: all return statements in start_timer signify failure to start timer. User will be re-prompted for new input
     def start_timer(self): 
         if self.running:
+            return
+        if not self.validate_inputs():
             return
         
         try:
@@ -276,6 +326,8 @@ class EyeRestApp:
         except ValueError:
             # Fallback to zero if invalid input
             total_seconds = 0
+        
+        total_seconds = min(total_seconds, 359999)
 
         hours = total_seconds // 3600
         minutes = (total_seconds % 3600) // 60
