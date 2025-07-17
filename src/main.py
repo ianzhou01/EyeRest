@@ -60,6 +60,10 @@ class EyeRestApp:
         self.work_unit_menu.add_command(label="minutes", command=lambda: self.set_work_unit("minutes"))
         self.work_unit_menu.add_command(label="seconds", command=lambda: self.set_work_unit("seconds"))
 
+        # For preview of countdown
+        self.work_value.trace_add("write", lambda *args: self.update_main_countdown_preview())
+        self.work_unit.trace_add("write", lambda *args: self.update_main_countdown_preview())
+
         # make frame for break interval
         self.break_frame = tk.Frame(root)
         self.break_frame.pack(pady=10)
@@ -82,7 +86,7 @@ class EyeRestApp:
         self.break_unit_menu.add_command(label="seconds", command=lambda: self.set_break_unit("seconds"))
 
         # Countdown
-        self.main_countdown = tk.Label(root, text="00:00:00", font=("Arial", 24))
+        self.main_countdown = tk.Label(root, text="00:20:00", font=("Arial", 24), fg="gray")
         self.main_countdown.pack(pady=10)
 
         # start/stop features
@@ -113,6 +117,31 @@ class EyeRestApp:
     def set_break_unit(self, unit):
         self.break_unit.set(unit)
         self.break_unit_button.config(text=unit)
+
+    def update_main_countdown_preview(self):
+        if self.running:
+            return  # Don’t update preview while timer is running
+
+        value = self.work_value.get()
+        unit = self.work_unit.get()
+
+        if not value.isdigit():
+            self.main_countdown.config(text="Invalid", fg="red")
+            return
+
+        seconds = int(value)
+        if unit == "minutes":
+            seconds *= 60
+
+        # Clamp to safe display limit
+        seconds = min(seconds, 359999)
+
+        hours = seconds // 3600
+        minutes = (seconds % 3600) // 60
+        secs = seconds % 60
+
+        formatted = f"{hours:02}:{minutes:02}:{secs:02}"
+        self.main_countdown.config(text=formatted, fg="gray")
 
     def validate_numeric_input(self, new_value, max_length):
         if new_value == "":
@@ -217,6 +246,7 @@ class EyeRestApp:
         
         # Reset countdown
         self.root.after(0, self.reset_countdown)
+        self.root.after(0, lambda: self.main_countdown.config(fg='gray'))
 
     def on_closing(self):
         self.stop_timer()  # stop timer if running
@@ -229,7 +259,31 @@ class EyeRestApp:
             self.notif_stopped_event.set()
 
     def reset_countdown(self):
-        self.root.after(0, self.main_countdown.config, {'text': "00:00:00"})
+        try:
+            work_value = int(self.work_value.get())
+            work_unit = self.work_unit.get()
+
+            # Convert to seconds
+            if work_unit == "minutes":
+                total_seconds = work_value * 60
+            else:
+                total_seconds = work_value
+            
+            # Clamp to zero if invalid
+            if total_seconds < 0:
+                total_seconds = 0
+
+        except ValueError:
+            # Fallback to zero if invalid input
+            total_seconds = 0
+
+        hours = total_seconds // 3600
+        minutes = (total_seconds % 3600) // 60
+        seconds = total_seconds % 60
+        preview_text = f"{hours:02}:{minutes:02}:{seconds:02}"
+
+        self.main_countdown.config(text=preview_text, fg='gray')
+
             
     def run_timer(self):
         while self.running:
@@ -278,7 +332,7 @@ class EyeRestApp:
         seconds = int(time_remaining % 60)
         countdown_text = f"{hours:02}:{minutes:02}:{seconds:02}"
 
-        self.root.after(0, self.main_countdown.config, {'text': countdown_text})
+        self.root.after(0, self.main_countdown.config, {'text': countdown_text, 'fg': 'black'})
 
     def notify_user(self):
         # Ensure only one notification window is open
