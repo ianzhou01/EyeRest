@@ -21,6 +21,9 @@ class EyeRestApp:
         self.root = root
         self.root.title("EyeRest")
 
+        vcmd_work = (self.root.register(self.validate_numeric_input), '%P', 6)
+        vcmd_break = (self.root.register(self.validate_numeric_input), '%P', 4)
+
         original_image = Image.open(resource_path("escape.png"))  # Load the image
         resized_image = original_image.resize((100, 100), Image.LANCZOS)  # Resize to 100x100 pixels
         self.icon_image = ImageTk.PhotoImage(resized_image)  # Convert to PhotoImage
@@ -45,7 +48,7 @@ class EyeRestApp:
         self.work_label.pack(side=tk.LEFT)
         
         self.work_value = tk.StringVar(value="20")  # Default value
-        self.work_entry = tk.Entry(self.work_frame, textvariable=self.work_value)
+        self.work_entry = tk.Entry(self.work_frame, textvariable=self.work_value, validate="key", validatecommand=vcmd_work)
         self.work_entry.pack(side=tk.LEFT)
         
         # create dropdown for work units
@@ -66,7 +69,7 @@ class EyeRestApp:
         self.break_label.pack(side=tk.LEFT)
         
         self.break_value = tk.StringVar(value="20")  # Default value
-        self.break_entry = tk.Entry(self.break_frame, textvariable=self.break_value)
+        self.break_entry = tk.Entry(self.break_frame, textvariable=self.break_value, validate="key", validatecommand=vcmd_break)
         self.break_entry.pack(side=tk.LEFT)
         
         # dropdown for break units
@@ -111,6 +114,13 @@ class EyeRestApp:
         self.break_unit.set(unit)
         self.break_unit_button.config(text=unit)
 
+    def validate_numeric_input(self, new_value, max_length):
+        if new_value == "":
+            return True  # Allow backspace
+        if new_value.isdigit() and len(new_value) <= int(max_length):
+            return True
+        return False
+
     # Note: all return statements in start_timer signify failure to start timer. User will be re-prompted for new input
     def start_timer(self): 
         if self.running:
@@ -132,6 +142,12 @@ class EyeRestApp:
             
             if self.work_interval <= 0:
                 raise ValueError("Work interval must be positive.")
+            
+            if self.work_interval < 5:
+                raise ValueError("Work interval cannot be less than 5 seconds.")
+            
+            self.work_interval = min(self.work_interval, 359999) # Clamp
+
         except ValueError as e:
             messagebox.showerror("Invalid input", str(e))
             return
@@ -153,16 +169,14 @@ class EyeRestApp:
             
             if self.break_duration <= 0:
                 raise ValueError("Break duration must be positive.")
+            
+            if self.break_duration < 5:
+                raise ValueError("Break duration cannot be less than 5 seconds.")
+            
+            self.break_duration = min(self.work_interval, 9999) # Clamp
+
         except ValueError as e:
             messagebox.showerror("Invalid input", str(e))
-            return
-        
-        # Minimum value checking
-        if self.work_interval < 5:
-            messagebox.showerror("Invalid input", "Work interval cannot be less than 5 seconds.")
-            return
-        if self.break_duration < 5:
-            messagebox.showerror("Invalid input", "Break duration cannot be less than 5 seconds.")
             return
 
         # Continue with starting the timer
