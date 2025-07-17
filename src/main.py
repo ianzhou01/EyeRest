@@ -183,15 +183,15 @@ class EyeRestApp:
             if break_value <= 0:
                 error_messages.append("Break duration must be positive.")
             elif break_value < 5 and self.break_unit.get() == "seconds":
-                error_messages.append("Break duration cannot be less than 5 seconds.")
+                error_messages.append("Break duration too short: Minimum is 5 seconds.")
             elif break_value > 166 and self.break_unit.get() == "minutes":
-                error_messages.append("Break duration too large. Maximum break length is 166 minutes (9999 s).")
+                error_messages.append("Break duration too long: Maximum is 166 minutes or 9999 seconds.")
         except ValueError:
             error_messages.append("Break duration must be a whole number.")
             
         # Update error label
         if error_messages:
-            self.error_label.config(text="; ".join(error_messages))
+            self.error_label.config(text=error_messages[0])  # Default to first error message
             return False
         else:
             self.error_label.config(text="")
@@ -205,58 +205,15 @@ class EyeRestApp:
         if not self.validate_inputs():
             return
         
-        try:
-            # Get and validate values
-            work_value = int(self.work_value.get())
-            work_unit = self.work_unit.get()
-        except ValueError:
-            messagebox.showerror("Invalid input", "Please enter valid work interval values. (Whole numbers only)")
-            return
-        
-        try: # Convert to seconds and ensure positivity of number
-            if work_unit == "minutes":
-                self.work_interval = work_value * 60
-            else:
-                self.work_interval = work_value
-            
-            if self.work_interval <= 0:
-                raise ValueError("Work interval must be positive.")
-            
-            if self.work_interval < 5:
-                raise ValueError("Work interval cannot be less than 5 seconds.")
-            
-            self.work_interval = min(self.work_interval, 359999) # Clamp
+        # Convert validated work input to seconds
+        work_value = int(self.work_value.get())
+        self.work_interval = work_value * 60 if self.work_unit.get() == "minutes" else work_value
+        self.work_interval = min(self.work_interval, 359999)  # Clamp
 
-        except ValueError as e:
-            messagebox.showerror("Invalid input", str(e))
-            return
-        
-        try:
-            # Get and validate break values
-            break_value = int(self.break_value.get())
-            break_unit = self.break_unit.get()
-        except ValueError:
-            messagebox.showerror("Invalid input", "Please enter valid break duration values. (Whole numbers only)")
-            return
-
-        try:
-            # Convert seconds and check positivity of break value
-            if break_unit == "minutes":
-                self.break_duration = break_value * 60
-            else:
-                self.break_duration = break_value
-            
-            if self.break_duration <= 0:
-                raise ValueError("Break duration must be positive.")
-            
-            if self.break_duration < 5:
-                raise ValueError("Break duration cannot be less than 5 seconds.")
-            
-            self.break_duration = min(self.work_interval, 9999) # Clamp
-
-        except ValueError as e:
-            messagebox.showerror("Invalid input", str(e))
-            return
+        # Convert validated break input to seconds
+        break_value = int(self.break_value.get())
+        self.break_duration = break_value * 60 if self.break_unit.get() == "minutes" else break_value
+        self.break_duration = min(self.break_duration, 9999)  # Clamp
 
         # Continue with starting the timer
         self.running = True
