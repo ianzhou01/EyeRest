@@ -8,6 +8,7 @@
 This app is currently configured only for Windows.
 - First, ensure you have Python installed (this was written with Python 3.12.3; it may run on earlier versions, but that is not guaranteed). Make sure it's added to your PATH during installation (in Windows, you can check this by opening a terminal and entering ```python --version```).
 - Open Visual Studio Code and clone this repository (```git clone https://github.com/ianzhou01/EyeRest``` on the terminal). 
-- Navigate to the cloned folder in a terminal; run ```python -m venv .venv; .venv/Scripts/activate; pip install -r requirements.txt``` to install dependencies in the environment.
+- Navigate to the cloned folder in a terminal; run ```python -m venv .venv; ./.venv/Scripts/activate; pip install -r requirements.txt``` to install dependencies in the environment.
+  - If running ```./.venv/Scripts/activate``` fails, you might not have permissions to run batch scripts. Try ```Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass ./.venv/Scripts/Activate.ps1``` instead.
 - Run ```pyinstaller EyeRest.spec``` and wait for the process to finish.
 - The executable should now be created in the dist directory.
