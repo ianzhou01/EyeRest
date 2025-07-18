@@ -259,11 +259,13 @@ class EyeRestApp:
         if self.timer_thread is not None:
             join_start_time = time.time()
             while self.timer_thread.is_alive():
-                self.timer_thread.join(timeout=0.1) # Bleed timer
-                # Break the loop after a certain timeout to avoid infinite loop
-                if time.time() - join_start_time > 0.15:  # Short timeout for safety buffer to clear thread
+                self.timer_thread.join(timeout=0.1)
+                if time.time() - join_start_time > 1.5:  # Give more time to shut down, but don't stall UI
+                    #print("ERROR: Thread still alive after timeout!")
                     break
-            self.timer_thread = None
+
+            if not self.timer_thread.is_alive():
+                self.timer_thread = None  # Avoid deleting reference to live thread
         
         # Reset countdown
         self.root.after(0, self.reset_and_display_countdown)
