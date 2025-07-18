@@ -21,6 +21,7 @@ class EyeRestApp:
         self.root = root
         self.root.title("EyeRest")
 
+        # For input field validation (bound to input boxes)
         vcmd_work = (self.root.register(self.validate_numeric_input), '%P', 6)
         vcmd_break = (self.root.register(self.validate_numeric_input), '%P', 4)
 
@@ -126,34 +127,41 @@ class EyeRestApp:
         self.break_unit_button.config(text=unit)
         self.validate_inputs()
 
-    def update_main_countdown_preview(self):
-        if self.running:
-            return  # Don’t update preview while timer is running
+    def reset_and_display_countdown(self, source="work", fg="gray"):
+        try:
+            value_str = self.work_value.get() if source == "work" else self.break_value.get()
+            unit = self.work_unit.get() if source == "work" else self.break_unit.get()
 
-        value = self.work_value.get()
-        unit = self.work_unit.get()
+            value = int(value_str)
 
-        if not value.isdigit():
+            # Convert to seconds
+            total_seconds = value * 60 if unit == "minutes" else value
+
+            if total_seconds < 0:
+                total_seconds = 0
+        except ValueError:
             self.main_countdown.config(text="Invalid", fg="red")
             return
 
-        seconds = int(value)
-        if unit == "minutes":
-            seconds *= 60
+        total_seconds = min(total_seconds, 359999)
 
-        # Clamp to safe display limit
-        seconds = min(seconds, 359999)
+        hours = total_seconds // 3600
+        minutes = (total_seconds % 3600) // 60
+        seconds = total_seconds % 60
+        formatted = f"{hours:02}:{minutes:02}:{seconds:02}"
 
-        hours = seconds // 3600
-        minutes = (seconds % 3600) // 60
-        secs = seconds % 60
+        self.main_countdown.config(text=formatted, fg=fg)
 
-        formatted = f"{hours:02}:{minutes:02}:{secs:02}"
-        self.main_countdown.config(text=formatted, fg="gray")
+
+    def update_main_countdown_preview(self):
+        if self.running:
+            return  # Don’t update preview while timer is running
+        
+        self.reset_and_display_countdown(source="work", fg="gray")
 
     def validate_numeric_input(self, new_value, max_length):
         if new_value == "":
-            return True  # Allow backspace
+            return True  # Allow backspace until empty
         
         if new_value.isdigit() and len(new_value) <= int(max_length):
             if new_value == "0" or new_value.startswith("0"):
@@ -171,9 +179,11 @@ class EyeRestApp:
             if work_value <= 0:
                 error_messages.append("Work interval must be positive.")
             elif work_value < 5 and self.work_unit.get() == "seconds":
-                error_messages.append("Work interval cannot be less than 5 seconds.")
-            elif work_value > 999999:
-                error_messages.append("Work interval too large.")
+                error_messages.append("Work interval too short. Min: 5 seconds.")
+            elif work_value > 359999 and self.work_unit.get() == "seconds":
+                error_messages.append("Work interval too long. Max: 359,999 seconds.")
+            elif work_value > 5999 and self.work_unit.get() == "minutes":
+                error_messages.append("Work interval too long. Max: 5999 minutes.")
         except ValueError:
             error_messages.append("Work interval must be a whole number.")
             
@@ -183,9 +193,13 @@ class EyeRestApp:
             if break_value <= 0:
                 error_messages.append("Break duration must be positive.")
             elif break_value < 5 and self.break_unit.get() == "seconds":
-                error_messages.append("Break duration too short: Minimum is 5 seconds.")
-            elif break_value > 166 and self.break_unit.get() == "minutes":
-                error_messages.append("Break duration too long: Maximum is 166 minutes or 9999 seconds.")
+                error_messages.append("Break duration too short. Min: 5 seconds.")
+            elif break_value > 600 and self.break_unit.get() == "seconds":
+                error_messages.append("Break duration too long. Max: 600 seconds.")
+            elif break_value > 10 and self.break_unit.get() == "minutes":
+                error_messages.append("Break duration too long. Max: 10 minutes.")
+            # No need to validate seconds, as the input value cannot get larger than 4 places (9999 s)
+            
         except ValueError:
             error_messages.append("Break duration must be a whole number.")
             
@@ -252,47 +266,17 @@ class EyeRestApp:
             self.timer_thread = None
         
         # Reset countdown
-        self.root.after(0, self.reset_countdown)
+        self.root.after(0, self.reset_and_display_countdown)
         self.root.after(0, lambda: self.main_countdown.config(fg='gray'))
 
     def on_closing(self):
         self.stop_timer()  # stop timer if running
-
         self.root.after(0, self.root.destroy)  # close the main window and exit
 
     def escape_notification_window(self):
         if hasattr(self, 'top') and self.top.winfo_exists():
             self.top.destroy()
             self.notif_stopped_event.set()
-
-    def reset_countdown(self):
-        try:
-            work_value = int(self.work_value.get())
-            work_unit = self.work_unit.get()
-
-            # Convert to seconds
-            if work_unit == "minutes":
-                total_seconds = work_value * 60
-            else:
-                total_seconds = work_value
-            
-            # Clamp to zero if invalid
-            if total_seconds < 0:
-                total_seconds = 0
-
-        except ValueError:
-            # Fallback to zero if invalid input
-            total_seconds = 0
-        
-        total_seconds = min(total_seconds, 359999)
-
-        hours = total_seconds // 3600
-        minutes = (total_seconds % 3600) // 60
-        seconds = total_seconds % 60
-        preview_text = f"{hours:02}:{minutes:02}:{seconds:02}"
-
-        self.main_countdown.config(text=preview_text, fg='gray')
-
             
     def run_timer(self):
         while self.running:
@@ -329,7 +313,7 @@ class EyeRestApp:
                 if not self.running or self.stop_event.is_set() or self.notif_stopped_event.is_set(): # COULD CAUSE ISSUES WITH RESTARTING MAIN TIMER
                     '''----CRITICAL LINE FOR MAIN TIMER RESET UPON NOTIFICATION WINDOW ESCAPE----'''
                     self.notif_stopped_event.clear()
-                    break
+                    break  # Use 'continue' to let break timer continue running upon break window exit
                 if self.root.winfo_exists():
                     self.root.after(0, self.update_main_countdown, break_time_remaining)
 
@@ -375,12 +359,15 @@ class EyeRestApp:
         self.break_interval_countdown(self.break_duration)
 
     def break_interval_countdown(self, count):
-        if count >= 0 and self.running:
-            self.countdown_label.config(text=f"Look 20 feet away for {count} seconds!")
-            self.top.after(1000, self.break_interval_countdown, count - 1)  # update countdown every 1000 ms
-        else:
-            self.top.destroy()  # close notif window when countdown finishes
-
+        if not self.running or self.stop_event.is_set():
+            return
+        
+        if count < 0 or self.notif_stopped_event.is_set():
+            self.top.destroy()
+            return
+        
+        self.countdown_label.config(text=f"Take a break for {count} seconds!")
+        self.top.after(1000, self.break_interval_countdown, count - 1)
 
 if __name__ == "__main__":
     root = tk.Tk()
